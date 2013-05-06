@@ -1,30 +1,11 @@
-require 'rexml/document'
-
 require_relative 'attribute'
+require_relative 'clearance'
 require_relative 'geometry'
 
 module EagleCAD
     class Schematic
 	attr_accessor :description
 	attr_reader :attributes, :classes, :libraries, :parts, :sheets
-
-	class ClearanceClass
-	    attr_accessor :name, :number, :width, :drill
-	    attr_reader :values
-
-	    def self.from_xml(element)
-		ClearanceClass.new(element.attributes['name'], element.attributes['number'].to_i).tap do |clearance|
-		    clearance.width = (element.attributes['width'] || 0).to_f
-		    clearance.drill = (element.attributes['drill'] || 0).to_f
-		end
-	    end
-
-	    def initialize(name, number)
-		@name = name
-		@number = number
-		@values = []
-	    end
-	end
 
 	class Part
 	    attr_accessor :name, :library, :deviceset, :device, :technology, :value
@@ -50,7 +31,7 @@ module EagleCAD
 			when 'attributes'
 			    element.elements.each {|attribute| schematic.attributes.push Attribute.from_xml(attribute) }
 			when 'classes'
-			    element.elements.each {|clearance| schematic.classes.push ClearanceClass.from_xml(clearance) }
+			    element.elements.each {|clearance| schematic.classes.push Clearance.from_xml(clearance) }
 			when 'description'
 			    schematic.description = element.text
 			when 'libraries'

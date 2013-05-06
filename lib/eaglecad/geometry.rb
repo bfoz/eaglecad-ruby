@@ -109,6 +109,27 @@ module EagleCAD
 	    end
 	end
 
+	def self.from_xml(element)
+	    case element.name
+		when 'circle'
+		    Geometry::Circle.from_xml(element)
+		when 'hole'
+		    Geometry::Hole.from_xml(element)
+		when 'pad'
+		    Geometry::Pad.from_xml(element)
+		when 'polygon'
+		    Geometry::Polygon.from_xml(element)
+		when 'rectangle'
+		    Geometry::Rectangle.from_xml(element)
+		when 'smd'
+		    Geometry::SMD.from_xml(element)
+		when 'text'
+		    Geometry::Text.from_xml(element)
+		when 'wire'
+		    Geometry::Line.from_xml(element)
+	    end
+	end
+
 	# Create a {Point} from the given {REXML::Element} using the passed attribute names
 	# @param [REXML::Element] element  The {REXML::Element} to parse
 	# @param [String] x_name    The name of the attribute containing the X coordinate

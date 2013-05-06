@@ -12,9 +12,16 @@ module EagleCAD
 	    Library.new(name:element.attributes['name']).tap do |library|
 		library.description = element.elements['description']
 
-		element.elements['packages'].elements.each {|package| library.push Package.from_xml(package) }
-		element.elements['symbols'].elements.each {|symbol| library.push Symbol.from_xml(symbol) }
-		element.elements['devicesets'].elements.each {|symbol| library.push DeviceSet.from_xml(symbol) }
+		element.elements.each do |element|
+		    case element.name
+			when 'devicesets'
+			    element.elements.each {|symbol| library.push DeviceSet.from_xml(symbol) }
+			when 'packages'
+			    element.elements.each {|package| library.push Package.from_xml(package) }
+			when 'symbols'
+			    element.elements.each {|symbol| library.push Symbol.from_xml(symbol) }
+		    end
+		end
 	    end
 	end
 

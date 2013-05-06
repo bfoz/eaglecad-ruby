@@ -16,26 +16,19 @@ module EagleCAD
 	    element.elements.each do |element|
 		layer_number = element.attributes['layer'].to_i if element.attributes.has_key?('layer')
 		case element.name
-		    when 'circle'
-			package.push layer_number, Geometry::Circle.from_xml(element)
 		    when 'description'
 			package.description = element.text
 		    when 'hole'
 			package.holes.push Geometry::Hole.from_xml(element)
 		    when 'pad'
 			package.pads.push Geometry::Pad.from_xml(element)
-		    when 'polygon'
-			package.push layer_number, Geometry::Polygon.from_xml(element)
-		    when 'rectangle'
-			package.push layer_number, Geometry::Rectangle.from_xml(element)
-		    when 'smd'
-			package.push layer_number, Geometry::SMD.from_xml(element)
-		    when 'text'
-			package.push layer_number, Geometry::Text.from_xml(element)
-		    when 'wire'
-			package.push layer_number, Geometry::Line.from_xml(element)
 		    else
-			raise StandardError, "Unrecognized package element '#{element.name}'"
+			g = Geometry.from_xml(element)
+			if g
+			    package.push layer_number, g
+			else
+			    raise StandardError, "Unrecognized package element '#{element.name}'"
+			end
 		end
 	    end
 
