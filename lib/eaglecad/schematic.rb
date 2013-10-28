@@ -1,6 +1,7 @@
 require_relative 'attribute'
 require_relative 'clearance'
 require_relative 'geometry'
+require_relative 'sheet'
 
 module EagleCAD
     class Schematic
