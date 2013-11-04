@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 require_relative 'geometry'
 
 module EagleCAD
@@ -51,6 +53,21 @@ module EagleCAD
 	def push(layer_number, element)
 	    layer = @layers[layer_number]
 	    layer.push element
+	end
+
+	# Generate XML for the {Symbol} element
+	# @return [REXML::Element]
+	def to_xml
+	    REXML::Element.new('symbol').tap do |element|
+		element.add_attribute 'name', name
+		element.add_element('description').text = description if description
+
+		pins.each {|pin| element.add_element pin.to_xml }
+
+		layers.each do |number, layer|
+		    layer.each {|obj| element.add_element(obj.to_xml, {'layer' => number}) }
+		end
+	    end
 	end
     end
 end

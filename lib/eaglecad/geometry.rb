@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 require 'geometry'
 
 module EagleCAD
@@ -15,7 +17,12 @@ module EagleCAD
 
 	    def initialize(options={})
 		@line_width = options.delete(:line_width)
-		super *options
+		super options[:center], options[:radius]
+	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('circle').tap {|element| element.add_attributes({'x' => Geometry.format(center.x), 'y' => Geometry.format(center.y), 'radius' => Geometry.format(radius), 'width' => line_width}) }
 	    end
 	end
 
@@ -23,34 +30,73 @@ module EagleCAD
 	    def self.from_xml(element)
 		Geometry::Hole.new Geometry.point_from(element, 'x', 'y'), element.attributes['drill']
 	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('hole').tap {|element| element.add_attributes({'x' => Geometry.format(origin.x), 'y' => Geometry.format(origin.y), 'drill' => drill}) }
+	    end
 	end
 
 	class Line < ::Geometry::TwoPointLine
-	    attr_accessor :line_width
+	    attr_accessor :cap, :curve, :line_width
 
 	    # Create a {Line} from an {REXML::Element}
 	    # @param [Element] element	The {REXML::Element} to parse
 	    def self.from_xml(element)
-		self.new(from:Geometry.point_from(element, 'x1', 'y1'), to:Geometry::point_from(element, 'x2', 'y2'), line_width:element.attributes['width'].to_f)
+	    self.new(from:Geometry.point_from(element, 'x1', 'y1'), to:Geometry::point_from(element, 'x2', 'y2'), line_width:element.attributes['width'].to_f, cap: element.attributes['cap'], curve: element.attributes['curve'].to_f)
 	    end
 
 	    def initialize(options={})
+		@cap = options.delete :cap
+		@curve = options.delete :curve
 		@line_width = options.delete(:line_width)
 		super options[:from], options[:to]
 	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('wire').tap do |element|
+		    element.add_attributes({'x1' => Geometry.format(first.x), 'y1' => Geometry.format(first.y), 'x2' => Geometry.format(last.x), 'y2' => Geometry.format(last.y), 'width' => line_width})
+		    element.add_attribute('cap', cap) unless 'round' == cap
+		    element.add_attribute('curve', curve) unless  0 == curve
+		end
+	    end
 	end
 
-	Pad = Struct.new :diameter, :drill, :name, :origin, :shape do
+	Pad = Struct.new :diameter, :drill, :name, :origin, :rotation, :shape do
 	    def self.from_xml(element)
 		origin = Geometry.point_from(element, 'x', 'y')
-		Geometry::Pad.new(element.attributes['diameter'], element.attributes['drill'], element.attributes['name'], origin, element.attributes['shape'])
+		Geometry::Pad.new(element.attributes['diameter'], element.attributes['drill'], element.attributes['name'], origin, element.attributes['rot'], element.attributes['shape'])
+	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('pad').tap do |element|
+		    element.add_attributes({'name' => name, 'x' => Geometry.format(origin.x), 'y' => Geometry.format(origin.y), 'diameter' => diameter, 'drill' => drill, 'shape' => shape})
+		    element.add_attribute('rot', rotation) unless 'R0' == rotation
+		end
 	    end
 	end
 
 	Pin = Struct.new :direction, :function, :length, :name, :origin, :swaplevel, :rotation, :visible do
 	    def self.from_xml(element)
 		origin = Geometry.point_from(element, 'x', 'y')
-		Geometry::Pin.new(element.attributes['direction'], element.attributes['function'], element.attributes['length'], element.attributes['name'], origin, element.attributes['swaplevel'], element.attributes['rotation'], element.attributes['visible'])
+		Geometry::Pin.new(element.attributes['direction'], element.attributes['function'], element.attributes['length'], element.attributes['name'], origin, element.attributes['swaplevel'], element.attributes['rot'], element.attributes['visible'])
+	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('pin').tap do |element|
+		    element.add_attributes({'name' => name,
+					    'x' => Geometry.format(origin.x),
+					    'y' => Geometry.format(origin.y),
+					    'direction' => direction,
+					    'function' => function,
+					    'length' => length,
+					    'swaplevel' => swaplevel,
+					    'rot' => rotation,
+					    'visible' => visible})
+		end
 	    end
 	end
 
@@ -73,6 +119,14 @@ module EagleCAD
 
 		super *args
 	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('polygon').tap do |element|
+		    element.add_attribute 'width', line_width
+		    vertices.each {|vertex| element.add_element('vertex', {'x' => Geometry.format(vertex.x), 'y' => Geometry.format(vertex.y)}) }
+		end
+	    end
 	end
 
 	class Rectangle < ::Geometry::Rectangle
@@ -81,7 +135,15 @@ module EagleCAD
 	    def self.from_xml(element)
 		first = Geometry.point_from(element, 'x1', 'y1')
 		last = Geometry.point_from(element, 'x2', 'y2')
-		::Geometry::Rectangle.new(from:first, to:last)
+		self.new(first, last)
+	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('rectangle').tap {|element| element.add_attributes({'x1' => Geometry.format(origin.x),
+										       'y1' => Geometry.format(origin.y),
+										       'x2' => Geometry.format(max.x),
+										       'y2' => Geometry.format(max.y)}) }
 	    end
 	end
 
@@ -95,17 +157,67 @@ module EagleCAD
 		SMD.new(origin:Geometry.point_from(element, 'x', 'y'), size:size).tap do |smd|
 		    smd.cream = ('no' != element.attributes['cream'])
 		    smd.name = element.attributes['name']
-		    smd.roundness = element.attributes['roundness'].to_i
 		    smd.rotation = element.attributes['rot']
+		    smd.roundness = element.attributes['roundness'].to_i
 		    smd.stop = ('no' != element.attributes['stop'])
 		    smd.thermals = ('no' != element.attributes['thermals'])
 		end
 	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('smd').tap do |element|
+		    element.add_attributes({'name' => name,
+					    'x' => Geometry.format(origin.x),
+					    'y' => Geometry.format(origin.y),
+					    'dx' => Geometry.format(size.width),
+					    'dy' => Geometry.format(size.height)})
+		    element.add_attribute('cream', 'no') unless cream
+		    element.add_attribute('rot', rotation) if rotation
+		    element.add_attribute('roundness', Geometry.format(roundness)) unless 0 == roundness
+		    element.add_attribute('stop', 'no') unless stop
+		    element.add_attribute('thermals', 'no') unless thermals
+		end
+	    end
 	end
 
-	Text = Struct.new :origin, :size, :text do
+	class Text
+	    attr_accessor :align, :distance, :origin, :font, :layer, :ratio, :rotation, :size, :text
+
 	    def self.from_xml(element)
-		Geometry::Text.new(Geometry.point_from(element, 'x', 'y'), element.attributes['size'].to_f, element.text)
+		Geometry::Text.new(Geometry.point_from(element, 'x', 'y'), element.attributes['layer'], element.attributes['size'].to_f, element.text).tap do |object|
+		    object.align = element.attributes['align'] || object.align
+		    object.distance = element.attributes['distance'] || object.distance
+		    object.font = element.attributes['font'] || object.font
+		    object.ratio = element.attributes['ratio'] || object.ratio
+		    object.rotation = element.attributes['rot'] || object.rotation
+		end
+	    end
+
+	    def initialize(origin, layer, size, text, options={})
+		@origin = origin
+		@layer = layer
+		@size = size
+		@text = text
+
+		@align = options['align'] || 'bottom-left'
+		@distance = options['distance'] || 50
+		@font = options['font'] || 'proportional'
+		@ratio = options['ratio'] || 8
+		@rotation = options['rot'] || 'R0'
+	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('text').tap do |element|
+		    element.add_attributes({'x' => Geometry.format(origin.x), 'y' => Geometry.format(origin.y), 'layer' => layer, 'size' => Geometry.format(size)})
+		    element.add_attribute('align', align)
+		    element.add_attribute('distance', distance)
+		    element.add_attribute('font', font)
+		    element.add_attribute('ratio', ratio)
+		    element.add_attribute('rot', rotation)
+		    element.text = text
+		end
 	    end
 	end
 
@@ -117,6 +229,8 @@ module EagleCAD
 		    Geometry::Hole.from_xml(element)
 		when 'pad'
 		    Geometry::Pad.from_xml(element)
+		when 'pin'
+		    Geometry::Pin.from_xml(element)
 		when 'polygon'
 		    Geometry::Polygon.from_xml(element)
 		when 'rectangle'
@@ -136,6 +250,10 @@ module EagleCAD
 	# @param [String] y_name    The name of the attribute containing the Y coordinate
 	def self.point_from(element, x_name='x', y_name='y')
 	    Point[element.attributes[x_name].to_f, element.attributes[y_name].to_f]
+	end
+
+	def self.format(value)
+	    "%g" % value
 	end
     end
 end

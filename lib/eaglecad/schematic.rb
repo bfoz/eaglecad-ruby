@@ -1,27 +1,16 @@
+require 'rexml/document'
+
 require_relative 'attribute'
 require_relative 'clearance'
 require_relative 'geometry'
+require_relative 'library'
+require_relative 'part'
 require_relative 'sheet'
 
 module EagleCAD
     class Schematic
 	attr_accessor :description
 	attr_reader :attributes, :classes, :libraries, :parts, :sheets
-
-	class Part
-	    attr_accessor :name, :library, :deviceset, :device, :technology, :value
-
-	    def self.from_xml(element)
-		Part.new(element.attributes['name'], element.attributes['library'], element.attributes['deviceset'], element.attributes['device'])
-	    end
-
-	    def initialize(name, library, deviceset, device)
-		@name = name
-		@library = library
-		@deviceset = deviceset
-		@device = device
-	    end
-	end
 
 	# Create a new {Schematic} from an {REXML::Element}
 	# @param [REXML::Element] element	The {REXML::Element} to parse
@@ -55,6 +44,40 @@ module EagleCAD
 	    @libraries = {}
 	    @parts = []
 	    @sheets = []
+	end
+
+	# Generate XML for the {Schematic} element
+	# @return [REXML::Element]
+	def to_xml
+	    REXML::Element.new('schematic').tap do |element|
+		element.add_element('description').text = description if description
+
+		# Libraries must be output before parts or Eagle will fail to load the file
+		element.add_element('libraries').tap do |libraries_element|
+		    libraries.each do |name, library|
+			libraries_element.add_element library.to_xml
+		    end
+		end
+
+		REXML::Element.new('attributes').tap do |attributes_element|
+		    attributes.each {|attribute| attributes_element.add_element attribute.to_xml }
+		    element.add_element(attributes_element) if attributes_element.has_elements?
+		end
+
+		element.add_element('variantdefs')
+
+		element.add_element('classes').tap do |classes_element|
+		    classes.each {|object| classes_element.add_element object.to_xml }
+		end
+
+		element.add_element('parts').tap do |parts_element|
+		    parts.each {|part| parts_element.add_element part.to_xml }
+		end
+
+		element.add_element('sheets').tap do |sheets_element|
+		    sheets.each {|sheet| sheets_element.add_element sheet.to_xml }
+		end
+	    end
 	end
     end
 end

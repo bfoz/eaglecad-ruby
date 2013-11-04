@@ -37,4 +37,24 @@ describe EagleCAD::Package do
 	    subject.pads.size.must_equal 1
 	end
     end
+
+    describe "when generating XML" do
+	subject { Package.from_xml(REXML::Document.new(File.open('test/fixtures/package.xml')).elements.first).to_xml }
+
+	it "must generate an XML element" do
+	    subject.must_be_instance_of REXML::Element
+	end
+
+	it "must have the correct name attribute" do
+	    subject.attributes['name'].must_equal 'C0402'
+	end
+
+	it "must have a description element" do
+	    subject.elements['description'].text.must_equal '<b>CAPACITOR</b><p>chip'
+	end
+
+	it "must have the correct number of children" do
+	    subject.elements.count.must_equal 18
+	end
+    end
 end

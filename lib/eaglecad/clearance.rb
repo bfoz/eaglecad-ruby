@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 module EagleCAD
     class Clearance
 	attr_accessor :name, :number, :width, :drill
@@ -16,6 +18,14 @@ module EagleCAD
 	    @name = name
 	    @number = number
 	    @values = []
+	end
+
+	# @param [REXML::Element]
+	def to_xml
+	    REXML::Element.new('class').tap do |element|
+		element.add_attributes({'name' => name, 'number' => number, 'width' => width, 'drill' => drill})
+		values.each {|value| element.add_element('clearance', {'class' => number, 'value' => value})}
+	    end
 	end
     end
 end

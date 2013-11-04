@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 require_relative 'geometry'
 
 module EagleCAD
@@ -51,5 +53,22 @@ module EagleCAD
 	    layer = @layers[layer_number]
 	    layer.push element
 	end
+
+	# Generate XML for the {Package} element
+	# @return [REXML::Element]
+	def to_xml
+	    REXML::Element.new('package').tap do |element|
+		element.add_attribute('name', name)
+		element.add_element('description').text = description
+
+		holes.each {|hole| element.add_element hole.to_xml }
+		pads.each {|pad| element.add_element pad.to_xml }
+
+		layers.each do |number, layer|
+		    layer.each {|obj| element.add_element(obj.to_xml, {'layer' => number}) }
+		end
+	    end
+	end
+
     end
 end

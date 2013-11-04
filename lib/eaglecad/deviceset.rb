@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 require_relative 'geometry'
 
 module EagleCAD
@@ -8,6 +10,11 @@ module EagleCAD
 	Connect = Struct.new :gate, :pin, :pad, :route do
 	    def self.from_xml(element)
 		Connect.new element.attributes['gate'], element.attributes['pin'], element.attributes['pad'], element.attributes['route']
+	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('connect').tap {|element| element.add_attributes({'gate' => gate, 'pad' => pad, 'pin' => pin}) }
 	    end
 	end
 	
@@ -35,12 +42,31 @@ module EagleCAD
 		@name = name
 		@technologies = []
 	    end
+
+	    # Generate XML for the {DeviceSet} element
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('device').tap do |element|
+		    element.add_attributes({'name' => name, 'package' => package})
+
+		    connects_element = element.add_element('connects')
+		    connects.each {|connect| connects_element.add_element connect.to_xml }
+
+		    technologies_element = element.add_element('technologies')
+		    technologies.each {|technology| technologies_element.add_element('technology', {'name' => technology}) }
+		end
+	    end
 	end
 
 	Gate = Struct.new :name, :symbol, :origin, :addlevel, :swaplevel do
 	    def self.from_xml(element)
 		Gate.new element.attributes['name'], element.attributes['symbol'], Geometry.point_from(element, 'x', 'y'), element.attributes['addlevel'], element.attributes['swaplevel']
 	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('gate').tap {|element| element.add_attributes({'name' => name, 'symbol' => symbol, 'x' => origin.x, 'y' => origin.y, 'addlevel' => addlevel, 'swaplevel' => swaplevel}) }
+            end
 	end
 
 	# Create a new {DeviceSet} from an {REXML::Element}
@@ -67,6 +93,21 @@ module EagleCAD
 	    @devices = []
 	    @gates = []
 	    @name = name
+	end
+
+	# Generate XML for the {DeviceSet} element
+	# @return [REXML::Element]
+	def to_xml
+	    REXML::Element.new('deviceset').tap do |element|
+		element.add_attributes({'name' => name, 'prefix' => prefix, 'uservalue' => (uservalue ? 'yes' : 'no')})
+		element.add_element('description').text = description
+
+		gates_element = element.add_element('gates')
+		gates.each {|gate| gates_element.add_element gate.to_xml }
+
+		devices_element = element.add_element('devices')
+		devices.each {|device| devices_element.add_element device.to_xml }
+	    end
 	end
     end
 end

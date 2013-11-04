@@ -19,7 +19,9 @@ Or install it yourself as:
 ## Usage
 
 ```ruby
-    require 'eaglecad'
+require 'eaglecad'
 
-    drawing = EagleCAD.read('my_schematic.sch')
+drawing = EagleCAD.read('my_schematic.sch')
+
+drawing.write('cloned_schematic.sch')
 ```

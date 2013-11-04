@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 module EagleCAD
     class Layer
 	attr_accessor :active, :color, :fill, :name, :number, :visible
@@ -7,7 +9,7 @@ module EagleCAD
 		element.attributes.each do |name, value|
 		    case name
 			when 'active'	then layer.active = ('no' != value)
-			when 'visible'	then layer.active = ('no' != value)
+			when 'visible'	then layer.visible = ('no' != value)
 		    end
 		end
 	    end
@@ -20,6 +22,19 @@ module EagleCAD
 	    @name = name
 	    @number = number
 	    @visible = true
+	end
+
+	# @return [REXML::Element]
+	def to_xml
+	    element = REXML::Element.new 'layer'
+	    element.add_attributes({'number' => number,
+				    'name' => name,
+				    'color' => color,
+				    'fill' => fill,
+				   })
+	    element.add_attribute('active', active ? 'yes' : 'no')
+	    element.add_attribute('visible', visible ? 'yes' : 'no')
+	    element
 	end
     end
 end

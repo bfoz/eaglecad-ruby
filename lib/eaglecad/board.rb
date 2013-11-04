@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 require_relative 'attribute'
 require_relative 'clearance'
 require_relative 'design_rules'
@@ -44,6 +46,19 @@ module EagleCAD
 
 		@attributes = []
 		@variants = []
+	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('element').tap do |element|
+		    element.add_attributes({'name' => name, 'library' => library, 'package' => package, 'value' => value, 'x' => origin.x, 'y' => origin.y})
+		    element.add_attribute('rot', "R#{rotation}") if 0 != rotation
+		    element.add_attribute('locked', 'yes') if locked
+		    element.add_attribute('smashed', 'yes') if smashed
+
+		    attributes.each {|attribute| element.add_element attribute.to_xml }
+		    variants.each {|variant| element.add_element('variant', variant)}
+		end
 	    end
 	end
 
@@ -92,9 +107,9 @@ module EagleCAD
 			when 'attributes'
 			    element.elements.each {|attribute| board.attributes.push Attribute.from_xml(attribute) }
 			when 'autorouter'
-			    element.elements.each do |element|
-				pass = board.passes[element.attributes['name']]
-				element.elements.each {|parameter| pass[parameter.attributes['name']] = parameter.attributes['value'] }
+			    element.elements.each do |pass_element|
+				pass = board.passes[pass_element.attributes['name']]
+				pass_element.elements.each {|parameter| pass[parameter.attributes['name']] = parameter.attributes['value'] }
 			    end
 			when 'classes'
 			    element.elements.each {|clearance| board.classes.push Clearance.from_xml(clearance) }
@@ -107,7 +122,7 @@ module EagleCAD
 			when 'libraries'
 			    element.elements.each {|library| board.libraries[library.attributes['name']] = Library.from_xml(library) }
 			when 'plain'
-			    board.plain.push Geometry.from_xml(element)
+			    element.elements.each {|object| board.plain.push Geometry.from_xml(object) }
 			when 'signals'
 			when 'variantdefs'
 			else
@@ -125,6 +140,45 @@ module EagleCAD
 	    @libraries = {}
 	    @passes = Hash.new {|hash, key| hash[key] = Hash.new }
 	    @plain = []
+	end
+
+	# @return [REXML::Element]
+	def to_xml
+	    REXML::Element.new('board').tap do |element|
+		element.add_element('attributes').tap do |attribute_element|
+		    attributes.each {|attribute| attribute_element.add_element attribute.to_xml }
+		end
+
+		element.add_element('description').text = description
+
+		element.add_element('autorouter').tap do |autorouter_element|
+		    passes.each do |name, pass|
+			autorouter_element.add_element('pass', {'name' => name}).tap do |pass_element|
+			    pass.each {|name, value| pass_element.add_element('param', {'name' => name, 'value' => value})}
+			end
+		    end
+		end
+
+		element.add_element('classes').tap do |classes_element|
+		    classes.each do |clearance|
+			classes_element.add_element clearance.to_xml
+		    end
+		end
+
+		element.add_element(design_rules.to_xml) if design_rules
+
+		element.add_element('elements').tap do |element_element|
+		    elements.each {|object| element_element.add_element object.to_xml }
+		end
+
+		element.add_element('libraries').tap do |libraries_element|
+		    libraries.each {|name, library| libraries_element.add_element library.to_xml }
+		end
+
+		element.add_element('plain').tap do |plain_element|
+		    plain.each {|object| plain_element.add_element object.to_xml }
+		end
+	    end
 	end
     end
 end

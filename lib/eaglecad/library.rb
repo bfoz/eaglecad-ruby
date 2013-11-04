@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 require_relative 'deviceset'
 require_relative 'package'
 require_relative 'symbol'
@@ -41,6 +43,30 @@ module EagleCAD
 		    @packages[arg.name] = arg
 		when Symbol
 		    @symbols.push arg
+	    end
+	end
+
+	# Generate XML for the {Library} element
+	# @return [REXML::Element]
+	def to_xml
+	    REXML::Element.new('library').tap do |element|
+		element.add_attribute 'name', name
+
+		# Packages must be output before devicesets or Eagle will fail to load the file
+		element.add_element('packages').tap do |packages_element|
+		    packages.each {|name, package| packages_element.add_element package.to_xml }
+		end
+
+		# Symbols must be output before devicessets or Eagle will fail to load the file
+		element.add_element('symbols').tap do |symbols_element|
+		    symbols.each {|symbol| symbols_element.add_element symbol.to_xml }
+		end
+
+		if device_sets and device_sets.count
+		    element.add_element('devicesets').tap do |devicesets_element|
+			device_sets.each {|deviceset| devicesets_element.add_element deviceset.to_xml }
+		    end
+		end
 	    end
 	end
     end

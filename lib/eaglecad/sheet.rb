@@ -6,7 +6,17 @@ module EagleCAD
 	attr_accessor :description
 	attr_reader :busses, :instances, :nets
 
-	PinReference = Struct.new :part, :gate, :pin
+	PinReference = Struct.new :part, :gate, :pin do
+	    def self.from_xml(element)
+		Sheet::PinReference.new element.attributes['part'], element.attributes['gate'], element.attributes['pin']
+	    end
+
+	    def to_xml
+		REXML::Element.new('pinref').tap do |element|
+		    element.add_attributes('gate' => gate, 'part' => part, 'pin' => pin)
+		end
+	    end
+	end
 
 	class Bus
 	    attr_accessor :name
@@ -21,6 +31,13 @@ module EagleCAD
 	    def initialize(name)
 		@name = name
 		@segments = []
+	    end
+
+	    def to_xml
+		REXML::Element.new('bus').tap do |element|
+		    element.add_attribute 'name', name
+		    segments.each {|segment| element.add_element segment.to_xml }
+		end
 	    end
 	end
 
@@ -50,7 +67,17 @@ module EagleCAD
 		@gate = gate
 		@origin = origin
 		@smashed = false
-		@rotation = 0
+		@rotation = 'R0'
+	    end
+
+	    def to_xml
+		REXML::Element.new('instance').tap do |element|
+		    element.add_attributes({'part' => part, 'gate' => gate, 'x' => origin.x, 'y' => origin.y})
+		    element.add_attribute('smashed', 'yes') if smashed
+		    element.add_attribute('rot', rotation)
+
+		    attributes.each {|attribute| element.add_element attribute.to_xml }
+		end
 	    end
 	end
 
@@ -63,7 +90,7 @@ module EagleCAD
 			case name
 			    when 'font'	    then label.font = value.to_sym
 			    when 'ratio'    then label.ratio = value.to_i
-			    when 'rotation' then label.rotation = value
+			    when 'rot'	    then label.rotation = value
 			    when 'xref'	    then label.cross_reference = ('no' != value)
 			end
 		    end
@@ -76,8 +103,18 @@ module EagleCAD
 		@layer_number = layer_number
 		@font = :proportional
 		@ratio = 8
-		@rotation = 0
+		@rotation = 'R0'
 		@cross_reference = false
+	    end
+
+	    def to_xml
+		REXML::Element.new('label').tap do |element|
+		    element.add_attributes({'x' => origin.x, 'y' => origin.y, 'layer' => layer_number ,'size' => size})
+		    element.add_attribute('font', font)
+		    element.add_attribute('ratio', ratio) unless 8 == ratio
+		    element.add_attribute('rot', rotation)
+		    element.add_attribute('xref', cross_reference) if cross_reference
+		end
 	    end
 	end
 
@@ -96,23 +133,32 @@ module EagleCAD
 		@name = name
 		@segments = []
 	    end
+
+	    def to_xml
+		REXML::Element.new('net').tap do |element|
+		    element.add_attribute('name', name)
+		    element.add_attribute('class', clearance_class) unless 0 == clearance_class
+
+		    segments.each {|segment| element.add_element segment.to_xml }
+		end
+	    end
 	end
 
 	class Segment
-	    attr_reader :elements
+	    attr_reader :elements, :layers
 
 	    def self.from_xml(element)
 		Segment.new.tap do |segment|
 		    element.elements.each do |element|
 			case element.name
-			    when 'pinref'
-				segment.elements.push PinReference.new element.attributes['part'], element.attributes['gate'], element.attributes['pin']
-			    when 'wire'
-				segment.elements.push Geometry::Line.from_xml(element)
 			    when 'junction'
 				segment.elements.push Geometry.point_from(element)
 			    when 'label'
-				segment.elements.push Label.from_xml(element)
+				segment.push element.attributes['layer'], Label.from_xml(element)
+			    when 'pinref'
+				segment.elements.push PinReference.from_xml(element)
+			    when 'wire'
+				segment.push element.attributes['layer'], Geometry::Line.from_xml(element)
 			    else
 				raise StandardError, "Unrecognized Segment element '#{element.name}"
 			end
@@ -122,6 +168,32 @@ module EagleCAD
 
 	    def initialize
 		@elements = []
+		@layers = {}
+		@layers.default_proc = proc {|hash, key| hash[key] = []}
+	    end
+
+	    # Push a new element to the given layer number
+	    # @param [Numeric] layer_number	The layer to add the element to
+	    # @param [Object] element   The thing to push
+	    def push(layer_number, element)
+		layer = @layers[layer_number]
+		layer.push element
+	    end
+
+	    def to_xml
+		REXML::Element.new('segment').tap do |element|
+		    elements.each do |object|
+			if object.is_a? Point
+			    element.add_element('junction', {'x' => object.x, 'y' => object.y})
+			else
+			    element.add_element object.to_xml
+			end
+		    end
+
+		    layers.each do |number, layer|
+			layer.each {|obj| element.add_element(obj.to_xml, {'layer' => number}) }
+		    end
+		end
 	    end
 	end
 
@@ -160,6 +232,24 @@ module EagleCAD
 		when Net	then nets.push arg
 		else
 		    raise ArgumentError, "Unrecognized object '#{arg.class}'"
+	    end
+	end
+
+	def to_xml
+	    REXML::Element.new('sheet').tap do |element|
+		element.add_element('description').text = description
+
+		element.add_element('instances').tap do |instances_element|
+		    instances.each {|instance| instances_element.add_element instance.to_xml }
+		end
+
+		element.add_element('busses').tap do |busses_element|
+		    busses.each {|bus| busses_element.add_element bus.to_xml }
+		end
+
+		element.add_element('nets').tap do |nets_element|
+		    nets.each {|net| nets_element.add_element net.to_xml }
+		end
 	    end
 	end
     end

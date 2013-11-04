@@ -1,3 +1,5 @@
+require 'rexml/document'
+
 module EagleCAD
     class DesignRules
 	attr_accessor :description, :name
@@ -21,6 +23,16 @@ module EagleCAD
 	def initialize(name)
 	    @name = name
 	    @parameters = {}
+	end
+
+	# @return [REXML::Element]
+	def to_xml
+	    REXML::Element.new('designrules').tap do |element|
+		element.add_attribute 'name', name
+		element.add_element('description').text = description if description
+
+		parameters.each {|key, value| element.add_element('param', {'name' => key, 'value' => value})}
+	    end
 	end
     end
 end

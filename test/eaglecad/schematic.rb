@@ -29,4 +29,22 @@ describe EagleCAD::Schematic do
 	    subject.sheets.size.must_equal 1
 	end
     end
+
+    describe "when generating XML" do
+	subject { EagleCAD::Schematic.from_xml(REXML::Document.new(File.open('test/fixtures/schematic.xml')).elements.first).to_xml }
+
+	it "must generate an XML element" do
+	    subject.must_be_instance_of REXML::Element
+	end
+
+	it "must have a libraries container element" do
+	    subject.get_elements('libraries').count.must_equal 1
+	end
+
+	it "must have the correct libraries" do
+	    library_element = subject.get_elements('libraries').first.first
+	    library_element.must_be_instance_of REXML::Element
+	    library_element.attributes['name'].must_equal 'rcl'
+	end
+    end
 end
