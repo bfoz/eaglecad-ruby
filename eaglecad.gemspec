@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
     spec.email         = ["bfoz@bfoz.net"]
     spec.description   = %q{Everything you need to bend Eagle CAD projects to your will}
     spec.summary       = %q{Read and write Eagle CAD files}
-    spec.homepage      = "http://github.com/bfoz/ruby-eaglecad"
+    spec.homepage      = "http://github.com/bfoz/eaglecad-ruby"
     spec.license       = "BSD"
 
     spec.files         = `git ls-files`.split($/)
