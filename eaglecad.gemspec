@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 
 Gem::Specification.new do |spec|
     spec.name          = "eaglecad"
-    spec.version       = '0'
+    spec.version       = '1'
     spec.authors       = ["Brandon Fosdick"]
     spec.email         = ["bfoz@bfoz.net"]
     spec.description   = %q{Everything you need to bend Eagle CAD projects to your will}
