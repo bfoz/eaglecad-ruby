@@ -6,14 +6,22 @@ module EagleCAD
 	attr_accessor :description
 	attr_reader :busses, :instances, :nets
 
-	PinReference = Struct.new :part, :gate, :pin do
-	    def self.from_xml(element)
-		Sheet::PinReference.new element.attributes['part'], element.attributes['gate'], element.attributes['pin']
+	PinReference = Struct.new :instance, :pin do
+	    def self.from_xml(element, instances=[])
+		gate_name = element.attributes['gate']
+		part_name = element.attributes['part']
+
+		instance = instances.find {|instance| (instance.part == part_name) && (instance.gate == gate_name)}
+		raise "Couldn't find an instance for #{part_name}:#{gate_name}" unless instance
+
+		Sheet::PinReference.new instance, element.attributes['pin']
 	    end
 
 	    def to_xml
 		REXML::Element.new('pinref').tap do |element|
-		    element.add_attributes('gate' => gate, 'part' => part, 'pin' => pin)
+		    element.add_attributes('gate' => instance.gate,
+					   'part' => instance.part,
+					   'pin' => pin)
 		end
 	    end
 	end
@@ -22,9 +30,9 @@ module EagleCAD
 	    attr_accessor :name
 	    attr_reader :segments
 
-	    def self.from_xml(element)
+	    def self.from_xml(element, instances)
 		Bus.new(element.attributes['name']).tap do |bus|
-		    element.elements.each {|segment| bus.segments.push Segment.from_xml(segment) }
+		    element.elements.each {|segment| bus.segments.push Segment.from_xml(segment, instances) }
 		end
 	    end
 
@@ -122,9 +130,9 @@ module EagleCAD
 	    attr_accessor :clearance_class, :name
 	    attr_reader :segments
 
-	    def self.from_xml(element)
+	    def self.from_xml(element, instances)
 		Net.new(element.attributes['name'], element.attributes['class'].to_i).tap do |net|
-		    element.elements.each {|segment| net.segments.push Segment.from_xml(segment) }
+		    element.elements.each {|segment| net.segments.push Segment.from_xml(segment, instances) }
 		end
 	    end
 
@@ -147,7 +155,7 @@ module EagleCAD
 	class Segment
 	    attr_reader :elements, :layers
 
-	    def self.from_xml(element)
+	    def self.from_xml(element, instances)
 		Segment.new.tap do |segment|
 		    element.elements.each do |element|
 			case element.name
@@ -156,7 +164,7 @@ module EagleCAD
 			    when 'label'
 				segment.push element.attributes['layer'], Label.from_xml(element)
 			    when 'pinref'
-				segment.elements.push PinReference.from_xml(element)
+				segment.elements.push PinReference.from_xml(element, instances)
 			    when 'wire'
 				segment.push element.attributes['layer'], Geometry::Line.from_xml(element)
 			    else
@@ -202,13 +210,13 @@ module EagleCAD
 		element.elements.each do |element|
 		    case element.name
 			when 'busses'
-			    element.elements.each {|bus| sheet.push Bus.from_xml(bus) }
+			    element.elements.each {|bus| sheet.push Bus.from_xml(bus, sheet.instances) }
 			when 'description'
 			    sheet.description = element.text
 			when 'instances'
 			    element.elements.each {|instance| sheet.push Instance.from_xml(instance) }
 			when 'nets'
-			    element.elements.each {|part| sheet.push Net.from_xml(part) }
+			    element.elements.each {|part| sheet.push Net.from_xml(part, sheet.instances) }
 			when 'plain' #Ignore
 			else
 			    raise StandardError, "Unrecognized Sheet element '#{element.name}'"
