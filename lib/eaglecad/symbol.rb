@@ -32,7 +32,11 @@ module EagleCAD
 		    when 'wire'
 			symbol.push layer_number, Geometry::Line.from_xml(element)
 		    else
-			raise StandardError, "Unrecognized symbol element '#{element.name}'"
+			begin
+			    symbol.push layer_number, Geometry.from_xml(element)
+			rescue ArgumentError
+			    raise ArgumentError, "Unrecognized symbol element '#{element.name}'"
+			end
 		end
 	    end
 

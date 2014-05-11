@@ -35,7 +35,7 @@ describe EagleCAD::Symbol do
 	end
 
 	it "must have the correct number of children" do
-	    subject.elements.count.must_equal 9
+	    subject.elements.count.must_equal 10
 	end
     end
 end

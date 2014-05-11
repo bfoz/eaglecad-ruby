@@ -26,6 +26,70 @@ module EagleCAD
 	    end
 	end
 
+	class Frame < ::Geometry::Rectangle
+	    # @!attribute columns
+	    #   @return [Number]  the number of columns
+	    attr_accessor :columns
+
+	    # @!attribute rows
+	    #   @return [Number]  the number of rows
+	    attr_accessor :rows
+
+	    # @!attribute bottom_border
+	    #   @return [Bool]  does the {Frame} have a bottom border?
+	    attr_accessor :bottom_border
+
+	    # @!attribute left_border
+	    #   @return [Bool]  does the {Frame} have a left border?
+	    attr_accessor :left_border
+
+	    # @!attribute right_border
+	    #   @return [Bool]  does the {Frame} have a right border?
+	    attr_accessor :right_border
+
+	    # @!attribute top_border
+	    #   @return [Bool]  does the {Frame} have a top border?
+	    attr_accessor :top_border
+
+	    # Create a {Frame} from an {REXML::Element}
+	    # @param [Element] element	The {REXML::Element} to parse
+	    def self.from_xml(element)
+		self.new(from: Geometry.point_from(element, 'x1', 'y1'),
+			 to: Geometry.point_from(element, 'x2', 'y2'),
+			 columns: element.attributes['columns'],
+			 rows: element.attributes['rows'],
+			 bottom: element.attributes['border-bottom'],
+			 left: element.attributes['border-left'],
+			 right: element.attributes['border-right'],
+			 top: element.attributes['border-top'])
+	    end
+
+	    def initialize(options={})
+		@columns = options.delete(:columns) || raise(ArgumentError, "Frame requires columns")
+		@rows = options.delete(:rows) || raise(ArgumentError, "Frame requires rows")
+
+		@top_border, @left_border, @bottom_border, @right_border = [:top, :left, :bottom, :right].map {|key| options.key?(key) ? (options.delete(key) == 'yes') : true }
+
+		super options[:from], options[:to]
+	    end
+
+	    # @return [REXML::Element]
+	    def to_xml
+		REXML::Element.new('frame').tap do |element|
+		    element.add_attributes('x1' => Geometry.format(origin.x),
+					   'y1' => Geometry.format(origin.y),
+					   'x2' => Geometry.format(max.x),
+					   'y2' => Geometry.format(max.y),
+					   'columns' => Geometry.format(columns),
+					   'rows' => Geometry.format(rows) )
+		    element.add_attribute('border-bottom', 'no') unless bottom_border
+		    element.add_attribute('border-left', 'no') unless left_border
+		    element.add_attribute('border-right', 'no') unless right_border
+		    element.add_attribute('border-top', 'no') unless top_border
+		end
+	    end
+	end
+
 	Hole = Struct.new :origin, :drill do
 	    def self.from_xml(element)
 		Geometry::Hole.new Geometry.point_from(element, 'x', 'y'), element.attributes['drill']
@@ -225,6 +289,7 @@ module EagleCAD
 	    case element.name
 		when 'circle'
 		    Geometry::Circle.from_xml(element)
+		when 'frame'	then Geometry::Frame.from_xml(element)
 		when 'hole'
 		    Geometry::Hole.from_xml(element)
 		when 'pad'
@@ -241,6 +306,8 @@ module EagleCAD
 		    Geometry::Text.from_xml(element)
 		when 'wire'
 		    Geometry::Line.from_xml(element)
+		else
+		    raise ArgumentError, "Unrecognized element '#{element.name}'"
 	    end
 	end
 
