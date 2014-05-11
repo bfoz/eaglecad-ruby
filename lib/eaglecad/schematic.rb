@@ -12,6 +12,10 @@ module EagleCAD
 	attr_accessor :description
 	attr_reader :attributes, :classes, :libraries, :parts, :sheets
 
+	# @!attribute errors
+	#   @return [Array<String>]  error strings that were stored in the 'errors' section of the file
+	attr_accessor :errors
+
 	# Create a new {Schematic} from an {REXML::Element}
 	# @param [REXML::Element] element	The {REXML::Element} to parse
     	def self.from_xml(element)
@@ -24,6 +28,8 @@ module EagleCAD
 			    element.elements.each {|clearance| schematic.classes.push Clearance.from_xml(clearance) }
 			when 'description'
 			    schematic.description = element.text
+			when 'errors'
+			    element.elements.each {|approved| schematic.errors.push approved.attributes['hash'] }
 			when 'libraries'
 			    element.elements.each {|library| schematic.libraries[library.attributes['name']] = Library.from_xml(library) }
 			when 'parts'
@@ -41,6 +47,7 @@ module EagleCAD
 	def initialize
 	    @attributes = []
 	    @classes = []
+	    @errors = []
 	    @libraries = {}
 	    @parts = []
 	    @sheets = []
@@ -76,6 +83,16 @@ module EagleCAD
 
 		element.add_element('sheets').tap do |sheets_element|
 		    sheets.each {|sheet| sheets_element.add_element sheet.to_xml }
+		end
+
+		if errors.length != 0
+		    element.add_element('errors').tap do |errors_element|
+			errors.each do |approved|
+			    errors_element.add_element('approved').tap do |approved_element|
+				approved_element.add_attribute('hash', approved)
+			    end
+			end
+		    end
 		end
 	    end
 	end

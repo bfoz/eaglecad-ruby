@@ -10858,4 +10858,71 @@ TS-003</description>
 </nets>
 </sheet>
 </sheets>
+<errors>
+    <approved hash="102,1,33.02,160.02,5V,VUSB,,,,"/>
+    <approved hash="102,1,248.92,81.28,GND,AGND,,,,"/>
+    <approved hash="201,1,33.02,160.02,5V,VUSB\, 5V,,,,"/>
+    <approved hash="201,1,248.92,81.28,GND,GND\, AGND,,,,"/>
+    <approved hash="102,3,35.56,60.96,5V,VUSB,,,,"/>
+    <approved hash="201,3,35.56,60.96,5V,VUSB\, 5V,,,,"/>
+    <approved hash="104,3,35.56,243.84,IC7,VCC,3.3V,,,"/>
+    <approved hash="104,3,27.94,109.22,POWER,+12V,VBB_IN,,,"/>
+    <approved hash="104,3,27.94,93.98,POWER,GND1,GND,,,"/>
+    <approved hash="206,3,60.96,38.1,3.3V,,,,,"/>
+    <approved hash="206,3,60.96,35.56,3.3V,,,,,"/>
+    <approved hash="208,1,236.22,106.68,3.3V,sup,,,,"/>
+    <approved hash="208,1,264.16,109.22,3.3V,sup,,,,"/>
+    <approved hash="208,1,45.72,55.88,3.3V,sup,,,,"/>
+    <approved hash="208,1,91.44,45.72,3.3V,sup,,,,"/>
+    <approved hash="208,1,119.38,45.72,3.3V,sup,,,,"/>
+    <approved hash="208,1,58.42,180.34,3.3V,sup,,,,"/>
+    <approved hash="208,1,185.42,48.26,3.3V,sup,,,,"/>
+    <approved hash="208,1,335.28,238.76,3.3V,sup,,,,"/>
+    <approved hash="208,1,30.48,251.46,3.3V,sup,,,,"/>
+    <approved hash="208,1,236.22,124.46,3.3V,sup,,,,"/>
+    <approved hash="208,1,76.2,246.38,3.3V,sup,,,,"/>
+    <approved hash="208,1,368.3,73.66,3.3V,sup,,,,"/>
+    <approved hash="208,1,198.12,48.26,3.3V,sup,,,,"/>
+    <approved hash="208,1,81.28,220.98,3.3V,sup,,,,"/>
+    <approved hash="208,1,20.32,223.52,3.3V,sup,,,,"/>
+    <approved hash="208,1,297.18,165.1,3.3V,sup,,,,"/>
+    <approved hash="208,1,68.58,182.88,3.3V,sup,,,,"/>
+    <approved hash="208,2,269.24,144.78,3.3V,sup,,,,"/>
+    <approved hash="208,2,368.3,142.24,3.3V,sup,,,,"/>
+    <approved hash="208,2,360.68,114.3,3.3V,sup,,,,"/>
+    <approved hash="208,2,88.9,193.04,3.3V,sup,,,,"/>
+    <approved hash="208,2,78.74,248.92,3.3V,sup,,,,"/>
+    <approved hash="208,2,30.48,238.76,3.3V,sup,,,,"/>
+    <approved hash="208,2,198.12,190.5,3.3V,sup,,,,"/>
+    <approved hash="208,2,139.7,228.6,3.3V,sup,,,,"/>
+    <approved hash="208,2,91.44,71.12,3.3V,sup,,,,"/>
+    <approved hash="208,2,33.02,109.22,3.3V,sup,,,,"/>
+    <approved hash="208,2,200.66,68.58,3.3V,sup,,,,"/>
+    <approved hash="208,2,142.24,106.68,3.3V,sup,,,,"/>
+    <approved hash="208,2,309.88,162.56,3.3V,sup,,,,"/>
+    <approved hash="208,3,66.04,241.3,3.3V,sup,,,,"/>
+    <approved hash="208,3,152.4,243.84,3.3V,sup,,,,"/>
+    <approved hash="208,3,22.86,248.92,3.3V,sup,,,,"/>
+    <approved hash="208,3,73.66,43.18,3.3V,sup,,,,"/>
+    <approved hash="208,3,60.96,38.1,3.3V,out,,,,"/>
+    <approved hash="208,3,60.96,35.56,3.3V,out,,,,"/>
+    <approved hash="208,4,109.22,187.96,3.3V,sup,,,,"/>
+    <approved hash="208,4,109.22,198.12,3.3V,sup,,,,"/>
+    <approved hash="208,4,55.88,246.38,3.3V,sup,,,,"/>
+    <approved hash="208,4,91.44,93.98,3.3V,sup,,,,"/>
+    <approved hash="208,4,30.48,132.08,3.3V,sup,,,,"/>
+    <approved hash="208,4,172.72,243.84,3.3V,sup,,,,"/>
+    <approved hash="106,1,25.4,208.28,CTS,,,,,"/>
+    <approved hash="106,1,129.54,58.42,JTAG-RTCK,,,,,"/>
+    <approved hash="106,1,129.54,66.04,JTAG-TCK,,,,,"/>
+    <approved hash="106,1,129.54,73.66,JTAG-TDI,,,,,"/>
+    <approved hash="106,1,129.54,76.2,JTAG-TDO,,,,,"/>
+    <approved hash="106,1,129.54,71.12,JTAG-TMS,,,,,"/>
+    <approved hash="106,1,129.54,68.58,JTAG-TRST,,,,,"/>
+    <approved hash="106,1,25.4,198.12,RTS,,,,,"/>
+    <approved hash="115,1,193.571,130.071,FRAME2,,,,,"/>
+    <approved hash="115,2,193.571,130.071,FRAME3,,,,,"/>
+    <approved hash="115,3,193.571,130.071,FRAME4,,,,,"/>
+    <approved hash="115,4,193.571,130.071,FRAME1,,,,,"/>
+</errors>
 </schematic>

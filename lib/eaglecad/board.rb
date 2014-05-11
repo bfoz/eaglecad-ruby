@@ -10,6 +10,10 @@ module EagleCAD
 	attr_accessor :design_rules, :description
 	attr_reader :attributes, :classes, :elements, :libraries, :passes, :plain
 
+	# @!attribute errors
+	#   @return [Array<String>]  error strings that were stored in the 'errors' section of the file
+	attr_accessor :errors
+
 	ContactReference = Struct.new :element, :pad, :route, :route_tag
 	Via = Struct.new :origin, :extent, :drill
 
@@ -119,6 +123,8 @@ module EagleCAD
 			    board.design_rules = DesignRules.from_xml(element)
 			when 'elements'
 			    element.elements.each {|object| board.elements.push Element.from_xml(object) }
+			when 'errors'
+			    element.elements.each {|approved| board.errors.push approved.attributes['hash'] }
 			when 'libraries'
 			    element.elements.each {|library| board.libraries[library.attributes['name']] = Library.from_xml(library) }
 			when 'plain'
@@ -137,6 +143,7 @@ module EagleCAD
 	    @classes = []
 	    @contact_references = []
 	    @elements = []
+	    @errors = []
 	    @libraries = {}
 	    @passes = Hash.new {|hash, key| hash[key] = Hash.new }
 	    @plain = []
@@ -169,6 +176,16 @@ module EagleCAD
 
 		element.add_element('elements').tap do |element_element|
 		    elements.each {|object| element_element.add_element object.to_xml }
+		end
+
+		if errors.length != 0
+		    element.add_element('errors').tap do |errors_element|
+			errors.each do |approved|
+			    errors_element.add_element('approved').tap do |approved_element|
+				approved_element.add_attribute('hash', approved)
+			    end
+			end
+		    end
 		end
 
 		element.add_element('libraries').tap do |libraries_element|
