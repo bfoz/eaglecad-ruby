@@ -12,7 +12,8 @@ module EagleCAD
 	# @param [REXML::Element] element	The {REXML::Element} to parse
 	def self.from_xml(element)
 	    Library.new(name:element.attributes['name']).tap do |library|
-		library.description = element.elements['description']
+		description = element.elements['description']
+		library.description = description.text if description
 
 		element.elements.each do |element|
 		    case element.name
@@ -51,6 +52,8 @@ module EagleCAD
 	def to_xml
 	    REXML::Element.new('library').tap do |element|
 		element.add_attribute 'name', name
+
+		element.add_element('description').text = description if description
 
 		# Packages must be output before devicesets or Eagle will fail to load the file
 		element.add_element('packages').tap do |packages_element|
