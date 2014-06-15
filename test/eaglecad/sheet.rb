@@ -20,6 +20,10 @@ describe EagleCAD::Sheet do
 	it "must have the correct number of nets" do
 	    subject.nets.size.must_equal 21
 	end
+
+	it 'must connect nets to pins' do
+	    subject.nets.first.connections.length.must_equal 18
+	end
     end
 
     describe 'when generating XML' do

@@ -6,15 +6,15 @@ module EagleCAD
 	attr_accessor :description
 	attr_reader :busses, :instances, :nets
 
-	PinReference = Struct.new :instance, :pin do
-	    def self.from_xml(element, instances=[])
+	PinReference = Struct.new :instance, :pin, :net do
+	    def self.from_xml(element, net, instances=[])
 		gate_name = element.attributes['gate']
 		part_name = element.attributes['part']
 
 		instance = instances.find {|instance| (instance.part == part_name) && (instance.gate == gate_name)}
 		raise "Couldn't find an instance for #{part_name}:#{gate_name}" unless instance
 
-		Sheet::PinReference.new instance, element.attributes['pin']
+		Sheet::PinReference.new instance, element.attributes['pin'], net
 	    end
 
 	    def to_xml
@@ -24,6 +24,10 @@ module EagleCAD
 					   'pin' => pin)
 		end
 	    end
+
+	    def to_s
+		"#{instance.part.name}.#{pin}"
+	    end
 	end
 
 	class Bus
@@ -32,7 +36,7 @@ module EagleCAD
 
 	    def self.from_xml(element, instances)
 		Bus.new(element.attributes['name']).tap do |bus|
-		    element.elements.each {|segment| bus.segments.push Segment.from_xml(segment, instances) }
+		    element.elements.each {|segment| bus.segments.push Segment.from_xml(segment, nil, instances) }
 		end
 	    end
 
@@ -129,15 +133,17 @@ module EagleCAD
 	class Net
 	    attr_accessor :clearance_class, :name
 	    attr_reader :segments
+	    attr_reader :connections
 
 	    def self.from_xml(element, instances)
 		Net.new(element.attributes['name'], element.attributes['class'].to_i).tap do |net|
-		    element.elements.each {|segment| net.segments.push Segment.from_xml(segment, instances) }
+		    element.elements.each {|segment| net.segments.push Segment.from_xml(segment, net, instances) }
 		end
 	    end
 
 	    def initialize(name, clearance_class)
 		@clearance_class = clearance_class
+		@connections = []
 		@name = name
 		@segments = []
 	    end
@@ -150,12 +156,18 @@ module EagleCAD
 		    segments.each {|segment| element.add_element segment.to_xml }
 		end
 	    end
+
+	    # Add a connection to the {Net}
+	    # @param pinref [PinReference]  the pin to connect to
+	    def connect(pinref)
+		connections << pinref
+	    end
 	end
 
 	class Segment
 	    attr_reader :elements, :layers
 
-	    def self.from_xml(element, instances)
+	    def self.from_xml(element, net, instances)
 		Segment.new.tap do |segment|
 		    element.elements.each do |element|
 			case element.name
@@ -164,7 +176,8 @@ module EagleCAD
 			    when 'label'
 				segment.push element.attributes['layer'], Label.from_xml(element)
 			    when 'pinref'
-				segment.elements.push PinReference.from_xml(element, instances)
+				segment.elements.push PinReference.from_xml(element, net, instances)
+				net.connect(segment.elements.last) if net
 			    when 'wire'
 				segment.push element.attributes['layer'], Geometry::Line.from_xml(element)
 			    else
