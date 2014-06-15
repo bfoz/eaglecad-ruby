@@ -2,8 +2,13 @@ require 'minitest/autorun'
 require 'eaglecad/sheet'
 
 describe EagleCAD::Sheet do
+    let(:xml) { REXML::Document.new(File.open('test/fixtures/sheet.xml')) }
+    let(:parts) do
+	REXML::Document.new(File.open('test/fixtures/parts.xml')).elements.first.elements.map {|part| EagleCAD::Part.from_xml(part) }
+    end
+
     describe "when initialized with an XML element" do
-	subject { EagleCAD::Sheet.from_xml(REXML::Document.new(File.open('test/fixtures/sheet.xml')).elements.first) }
+	subject { EagleCAD::Sheet.from_xml(xml.elements.first, parts) }
 
 	it "must have a description" do
 	    subject.description.must_equal 'Sheet Description'
@@ -24,10 +29,14 @@ describe EagleCAD::Sheet do
 	it 'must connect nets to pins' do
 	    subject.nets.first.connections.length.must_equal 18
 	end
+
+	it 'must connect Instances to Parts' do
+	    subject.instances.first.part.must_be_instance_of EagleCAD::Part
+	end
     end
 
     describe 'when generating XML' do
-	subject { EagleCAD::Sheet.from_xml(REXML::Document.new(File.open('test/fixtures/sheet.xml')).elements.first).to_xml }
+	subject { EagleCAD::Sheet.from_xml(xml.elements.first, parts).to_xml }
 
 	it 'must generate an XML element' do
 	    subject.must_be_instance_of REXML::Element

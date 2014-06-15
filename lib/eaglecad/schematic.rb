@@ -35,7 +35,7 @@ module EagleCAD
 			when 'parts'
 			    element.elements.each {|part| schematic.parts.push Part.from_xml(part) }
 			when 'sheets'
-			    element.elements.each {|sheet| schematic.sheets.push Sheet.from_xml(sheet) }
+			    element.elements.each {|sheet| schematic.sheets.push Sheet.from_xml(sheet, schematic.parts) }
 			when 'variantdefs'
 			else
 			    raise StandardError, "Unrecognized element '#{element.name}'"

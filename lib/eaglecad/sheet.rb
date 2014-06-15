@@ -2,6 +2,8 @@ require_relative 'attribute'
 require_relative 'geometry'
 
 module EagleCAD
+    ParseError = Class.new(StandardError)
+
     class Sheet
 	attr_accessor :description
 	attr_reader :busses, :instances, :nets
@@ -11,8 +13,8 @@ module EagleCAD
 		gate_name = element.attributes['gate']
 		part_name = element.attributes['part']
 
-		instance = instances.find {|instance| (instance.part == part_name) && (instance.gate == gate_name)}
-		raise "Couldn't find an instance for #{part_name}:#{gate_name}" unless instance
+		instance = instances.find {|instance| (instance.part.name == part_name) && (instance.gate == gate_name)}
+		raise ParseError, "Couldn't find an instance for #{part_name}:#{gate_name}" unless instance
 
 		Sheet::PinReference.new instance, element.attributes['pin'], net
 	    end
@@ -54,11 +56,21 @@ module EagleCAD
 	end
 
 	class Instance
-	    attr_accessor :part, :gate, :origin, :smashed, :rotation
+	    # @!attribute part
+	    #   @return [Part]  The {Part} that this {Instance} is an instance of
+	    attr_accessor :part
+
+	    attr_accessor :gate, :origin, :smashed, :rotation
 	    attr_reader :attributes
 
-	    def self.from_xml(element)
-		Instance.new(element.attributes['part'], element.attributes['gate'], Geometry.point_from(element)).tap do |instance|
+	    def self.from_xml(element, parts)
+		gate_name = element.attributes['gate']
+		part_name = element.attributes['part']
+
+		part = parts.find {|part| part.name == part_name }
+		raise ParseError, "Couldn't find a Part for #{part_name}:#{gate_name}" unless part
+
+		Instance.new(part, element.attributes['gate'], Geometry.point_from(element)).tap do |instance|
 		    element.attributes.each do |name, value|
 			case name
 			    when 'smashed'  then instance.smashed = ('no' != element.attributes['smashed'])
@@ -84,7 +96,7 @@ module EagleCAD
 
 	    def to_xml
 		REXML::Element.new('instance').tap do |element|
-		    element.add_attributes({'part' => part, 'gate' => gate, 'x' => origin.x, 'y' => origin.y})
+		    element.add_attributes({'part' => part.name, 'gate' => gate, 'x' => origin.x, 'y' => origin.y})
 		    element.add_attribute('smashed', 'yes') if smashed
 		    element.add_attribute('rot', rotation)
 
@@ -218,7 +230,7 @@ module EagleCAD
 	    end
 	end
 
-	def self.from_xml(element)
+	def self.from_xml(element, parts)
 	    Sheet.new.tap do |sheet|
 		element.elements.each do |element|
 		    case element.name
@@ -227,7 +239,7 @@ module EagleCAD
 			when 'description'
 			    sheet.description = element.text
 			when 'instances'
-			    element.elements.each {|instance| sheet.push Instance.from_xml(instance) }
+			    element.elements.each {|instance| sheet.push Instance.from_xml(instance, parts) }
 			when 'nets'
 			    element.elements.each {|part| sheet.push Net.from_xml(part, sheet.instances) }
 			when 'plain' #Ignore

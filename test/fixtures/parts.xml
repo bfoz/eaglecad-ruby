@@ -1,0 +1,29 @@
+<parts>
+    <part name="F1" library="frames" deviceset="DINA4_L" device=""/>
+    <part name="C4" library="rcl" deviceset="CPOL-EU" device="TAP5-45" value="47u/25V"/>
+    <part name="C5" library="rcl" deviceset="CPOL-EU" device="TAP5-45" value="47u"/>
+    <part name="D1" library="diode" deviceset="1N4148" device=""/>
+    <part name="IC1" library="microchip" deviceset="PIC16F8*" device="P" technology="4A"/>
+    <part name="R1" library="rcl" deviceset="R-EU_" device="R1206" value="2,2k"/>
+    <part name="C1" library="rcl" deviceset="C-EU" device="C1206" value="30p"/>
+    <part name="C2" library="rcl" deviceset="C-EU" device="C1206" value="30p"/>
+    <part name="C3" library="rcl" deviceset="C-EU" device="025-025X050" value="10n"/>
+    <part name="IC2" library="linear" deviceset="78*" device="Z" technology="L05"/>
+    <part name="GND1" library="supply1" deviceset="GND" device=""/>
+    <part name="GND2" library="supply1" deviceset="GND" device=""/>
+    <part name="GND3" library="supply1" deviceset="GND" device=""/>
+    <part name="GND4" library="supply1" deviceset="GND" device=""/>
+    <part name="P+4" library="supply1" deviceset="V+" device=""/>
+    <part name="GND8" library="supply1" deviceset="GND" device=""/>
+    <part name="P+3" library="supply1" deviceset="V+" device=""/>
+    <part name="P+2" library="supply1" deviceset="+5V" device=""/>
+    <part name="P+5" library="supply1" deviceset="+5V" device=""/>
+    <part name="GND5" library="supply1" deviceset="GND" device=""/>
+    <part name="GND6" library="supply1" deviceset="GND" device=""/>
+    <part name="GND7" library="supply1" deviceset="GND" device=""/>
+    <part name="GND9" library="supply1" deviceset="GND" device=""/>
+    <part name="P+1" library="supply1" deviceset="+5V" device=""/>
+    <part name="JP1" library="pinhead" deviceset="PINHD-1X4" device="" value="PROG"/>
+    <part name="JP2" library="pinhead" deviceset="PINHD-1X17" device="" value="APPL"/>
+    <part name="Q1" library="special" deviceset="XTAL/S" device=""/>
+</parts>
